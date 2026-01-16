@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% block content %}
+{% if mode == "new" %}
+  <h2>Nuova pratica</h2>
+  <form method="post">
+{% else %}
+  <h2>Modifica pratica #{{ pratica.id }}</h2>
+  <form method="post">
+{% endif %}
+
+  <div class="grid" style="max-width:900px;">
+    <div>
+      <label>Cliente *</label>
+      <input name="cliente" required value="{{ pratica.cliente if pratica else '' }}" />
+    </div>
+
+    <div>
+      <label>Stato</label>
+      <select name="stato">
+        {% set cur = pratica.stato if pratica else 'NUOVA' %}
+        <option value="NUOVA"  {% if cur=='NUOVA' %}selected{% endif %}>NUOVA</option>
+        <option value="ATTIVA" {% if cur=='ATTIVA' %}selected{% endif %}>ATTIVA</option>
+        <option value="CHIUSA" {% if cur=='CHIUSA' %}selected{% endif %}>CHIUSA</option>
+      </select>
+    </div>
+
+    <div class="full">
+      <label>Oggetto *</label>
+      <input name="oggetto" required value="{{ pratica.oggetto if pratica else '' }}" />
+    </div>
+
+    <div class="full">
+      <label>Note</label>
+      <textarea name="note" rows="6">{{ pratica.note if pratica else '' }}</textarea>
+    </div>
+
+    <div class="full">
+      <button class="btn" type="submit">Salva</button>
+      <a class="btn" href="{{ url_for('pratiche', stato=(pratica.stato if pratica else 'NUOVA')) }}">Annulla</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

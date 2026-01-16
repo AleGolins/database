@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Pratiche — {{ stato }}</h2>
+
+<nav style="margin: 10px 0 16px;">
+  <a class="btn" href="{{ url_for('pratiche', stato='NUOVA') }}">Nuove</a>
+  <a class="btn" href="{{ url_for('pratiche', stato='ATTIVA') }}">Attive</a>
+  <a class="btn" href="{{ url_for('pratiche', stato='CHIUSA') }}">Chiuse</a>
+  <a class="btn" href="{{ url_for('pratica_nuova') }}" style="float:right;">+ Nuova pratica</a>
+</nav>
+
+<div class="muted" id="status">Aggiornamento ogni 5 secondi…</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Cliente</th>
+      <th>Oggetto</th>
+      <th>Stato</th>
+      <th>Apertura</th>
+      <th>Chiusura</th>
+      <th>Ultimo agg.</th>
+      <th>Azioni</th>
+    </tr>
+  </thead>
+  <tbody id="rows">
+    <tr><td colspan="8" class="muted">Caricamento…</td></tr>
+  </tbody>
+</table>
+
+<script>
+  const stato = "{{ stato }}";
+  const rowsEl = document.getElementById("rows");
+  const statusEl = document.getElementById("status");
+
+  function esc(s) {
+    return String(s ?? "").replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
+  }
+
+  async function loadRows() {
+    try {
+      const r = await fetch(`/api/pratiche?stato=${encodeURIComponent(stato)}`, { cache: "no-store" });
+      const data = await r.json();
+
+      if (!Array.isArray(data) || data.length === 0) {
+        rowsEl.innerHTML = `<tr><td colspan="8" class="muted">Nessuna pratica in questo stato.</td></tr>`;
+      } else {
+        rowsEl.innerHTML = data.map(p => `
+          <tr>
+            <td>${esc(p.id)}</td>
+            <td>${esc(p.cliente)}</td>
+            <td>${esc(p.oggetto)}</td>
+            <td><span class="pill">${esc(p.stato)}</span></td>
+            <td>${esc(p.data_apertura || "")}</td>
+            <td>${esc(p.data_chiusura || "")}</td>
+            <td class="muted">${esc(p.updated_at || "")}<br/>${esc(p.updated_by || "")}</td>
+            <td class="row-actions">
+              <a class="btn" href="/pratiche/${p.id}/modifica">Modifica</a>
+              <form method="post" action="/pratiche/${p.id}/elimina" style="display:inline;" onsubmit="return confirm('Eliminare la pratica #' + p.id + '?');">
+                <button class="btn" type="submit">Elimina</button>
+              </form>
+            </td>
+          </tr>
+        `).join("");
+      }
+      statusEl.textContent = "Ultimo aggiornamento: " + new Date().toLocaleString();
+    } catch (e) {
+      statusEl.textContent = "Errore aggiornamento. Riprovo tra 5s.";
+    }
+  }
+
+  loadRows();
+  setInterval(loadRows, 5000);
+</script>
+{% endblock %}
